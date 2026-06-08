@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+openapi.json
+artifacts/
+.env
+.env.local
+npm-debug.log*
+yarn-error.log
+pnpm-lock.yaml
+.DS_Store
+.idea
+.vscode

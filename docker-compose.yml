@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: callback_mvp
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d callback_mvp"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgres://app:app@postgres:5432/callback_mvp
+      DB_SYNCHRONIZE: "true"
+      SESSION_TTL_SECONDS: 86400
+      LOG_LEVEL: info
+      STRIPE_WEBHOOK_SECRET: ""
+      STRIPE_SIGNATURE_TOLERANCE_SECONDS: 300
+      PRAGMATIC_WEBHOOK_SECRET: ""
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
