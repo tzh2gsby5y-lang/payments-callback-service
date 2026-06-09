@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBadRequestResponse,
@@ -47,6 +47,7 @@ export class IdentityController {
   }
 
   @Post('/auth/login')
+  @HttpCode(200)
   @ApiOkResponse({
     description: 'Session token for the tenant-scoped user.',
     type: LoginResponseDto,

@@ -35,7 +35,7 @@ describe('Tenant leakage integration', () => {
       brandId: 'brandA',
       email: 'player@example.com',
       password: 'strong-password',
-    });
+    }).expect(200);
 
     await request(context.app.getHttpServer())
       .get('/profile/me')
