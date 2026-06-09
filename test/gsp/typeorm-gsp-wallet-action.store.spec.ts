@@ -358,7 +358,31 @@ function idempotencyRecord(patch: Partial<IdempotencyKeyOrmEntity> = {}): Idempo
     responseBody: { status: 'approved' },
     createdAt: new Date(),
     updatedAt: new Date(),
-    rawEvent: {} as RawEventOrmEntity,
+    rawEvent: rawEventRecord(),
+    ...patch,
+  };
+}
+
+function rawEventRecord(patch: Partial<RawEventOrmEntity> = {}): RawEventOrmEntity {
+  return {
+    id: 'raw-1',
+    brandId: 'brandA',
+    source: 'gsp',
+    provider: 'pragmatic',
+    providerEventId: 'txn-1',
+    idempotencyKey: 'pragmatic:bet:txn-1',
+    eventType: 'bet',
+    status: 'COMPLETED',
+    signatureValid: true,
+    requestHash: 'request-hash',
+    headers: {},
+    rawBody: '{"action":"bet"}',
+    parsedBody: { action: 'bet' },
+    normalizedBody: { providerEventId: 'txn-1' },
+    responseStatus: 200,
+    responseBody: { status: 'approved' },
+    receivedAt: new Date(),
+    updatedAt: new Date(),
     ...patch,
   };
 }

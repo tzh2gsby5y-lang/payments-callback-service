@@ -341,7 +341,7 @@ function idempotencyRecord(patch: Partial<IdempotencyKeyOrmEntity> = {}): Idempo
     responseBody: null,
     createdAt: new Date(),
     updatedAt: new Date(),
-    rawEvent: {} as RawEventOrmEntity,
+    rawEvent: rawEventRecord(),
     ...patch,
   };
 }
@@ -355,7 +355,7 @@ function handoffRecord(
     source: 'psp',
     provider: 'stripe',
     rawEventId: 'raw-1',
-    rawEvent: {} as RawEventOrmEntity,
+    rawEvent: rawEventRecord(),
     idempotencyKey: 'stripe:evt_1',
     providerEventId: 'evt_1',
     eventType: 'payment_intent.succeeded',
@@ -370,6 +370,30 @@ function handoffRecord(
     nextAttemptAt: new Date(),
     lastError: null,
     createdAt: new Date(),
+    updatedAt: new Date(),
+    ...patch,
+  };
+}
+
+function rawEventRecord(patch: Partial<RawEventOrmEntity> = {}): RawEventOrmEntity {
+  return {
+    id: 'raw-1',
+    brandId: 'brandA',
+    source: 'psp',
+    provider: 'stripe',
+    providerEventId: 'evt_1',
+    idempotencyKey: 'stripe:evt_1',
+    eventType: 'payment_intent.succeeded',
+    status: 'ACCEPTED',
+    signatureValid: true,
+    requestHash: 'request-hash',
+    headers: {},
+    rawBody: '{"id":"evt_1"}',
+    parsedBody: { id: 'evt_1' },
+    normalizedBody: { providerEventId: 'evt_1' },
+    responseStatus: 202,
+    responseBody: null,
+    receivedAt: new Date(),
     updatedAt: new Date(),
     ...patch,
   };

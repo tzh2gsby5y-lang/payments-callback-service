@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z, ZodIssueCode } from 'zod';
 
 export const envSchema = z
   .object({
@@ -27,7 +27,7 @@ export const envSchema = z
 
     if (!env.STRIPE_WEBHOOK_SECRET) {
       context.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: ZodIssueCode.custom,
         path: ['STRIPE_WEBHOOK_SECRET'],
         message: 'STRIPE_WEBHOOK_SECRET is required in production',
       });
@@ -35,7 +35,7 @@ export const envSchema = z
 
     if (!env.PRAGMATIC_WEBHOOK_SECRET) {
       context.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: ZodIssueCode.custom,
         path: ['PRAGMATIC_WEBHOOK_SECRET'],
         message: 'PRAGMATIC_WEBHOOK_SECRET is required in production',
       });

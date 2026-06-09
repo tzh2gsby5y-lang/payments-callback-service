@@ -82,11 +82,16 @@ describe('ProviderCallbackIngestionService', () => {
     expect(result.statusCode).toBe(202);
     expect(result.body.handoff).toBe('pending_evaluation');
     expect(store.calls).toHaveLength(1);
-    expect(store.calls[0]).toMatchObject({
+    const storeCall = store.calls[0];
+    if (!storeCall) {
+      throw new Error('Expected provider event store call');
+    }
+    expect(typeof storeCall.requestHash).toBe('string');
+    expect(storeCall.requestHash).toHaveLength(64);
+    expect(storeCall).toMatchObject({
       source: 'psp',
       provider: 'stripe',
       idempotencyKey: 'stripe:evt_123',
-      requestHash: expect.any(String),
       normalized: {
         brandId: 'brandA',
         providerEventId: 'evt_123',

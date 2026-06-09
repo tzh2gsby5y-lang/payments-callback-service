@@ -54,20 +54,17 @@ describe('identity TypeORM repositories', () => {
       tokenHash: 'token-hash',
       expiresAt: new Date('2026-06-08T13:00:00Z'),
     });
-    expect(repository.findOne).toHaveBeenCalledWith({
-      where: {
-        tokenHash: 'token-hash',
-        expiresAt: expect.any(FindOperator),
-      },
-    });
+    expect(repository.findOne).toHaveBeenCalledTimes(1);
     const firstFindOneCall = repository.findOne.mock.calls[0];
     if (!firstFindOneCall) {
       throw new Error('Expected session lookup query');
     }
     const findOneOptions = firstFindOneCall[0] as {
-      where: { expiresAt: FindOperator<Date> };
+      where: { tokenHash: string; expiresAt: FindOperator<Date> };
     };
+    expect(findOneOptions.where.tokenHash).toBe('token-hash');
     const expiresAtOperator = findOneOptions.where.expiresAt;
+    expect(expiresAtOperator).toBeInstanceOf(FindOperator);
     expect(expiresAtOperator.value).toBe(now);
   });
 });

@@ -47,10 +47,13 @@ describe('SessionAuthGuard', () => {
       guard.canActivate(contextFor({ authorization: 'Bearer plain-token' })),
     ).rejects.toBeInstanceOf(UnauthorizedException);
 
-    expect(sessions.findValidByTokenHash).toHaveBeenCalledWith(
-      tokens.hashToken('plain-token'),
-      expect.any(Date),
-    );
+    const lookupCall = sessions.findValidByTokenHash.mock.calls[0];
+    if (!lookupCall) {
+      throw new Error('Expected session lookup call');
+    }
+    const [tokenHash, lookupDate] = lookupCall;
+    expect(tokenHash).toBe(tokens.hashToken('plain-token'));
+    expect(lookupDate).toBeInstanceOf(Date);
   });
 
   it('sets principal for a valid session and allows absent or matching brand headers', async () => {
