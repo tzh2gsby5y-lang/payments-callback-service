@@ -24,8 +24,7 @@ export const IdempotencyStatuses = {
   FAILED_FINAL: 'FAILED_FINAL',
 } as const;
 
-export type IdempotencyStatus =
-  (typeof IdempotencyStatuses)[keyof typeof IdempotencyStatuses];
+export type IdempotencyStatus = (typeof IdempotencyStatuses)[keyof typeof IdempotencyStatuses];
 
 export type NormalizedCallbackEvent = {
   source: CallbackSource;

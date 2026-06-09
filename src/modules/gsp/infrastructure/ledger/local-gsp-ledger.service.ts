@@ -18,7 +18,7 @@ type LedgerTransaction = {
 };
 
 @Injectable()
-export class FakeGspLedgerService implements GspLedgerPort {
+export class LocalGspLedgerService implements GspLedgerPort {
   private readonly balances = new Map<string, bigint>();
   private readonly transactions = new Map<string, LedgerTransaction>();
 
@@ -45,11 +45,7 @@ export class FakeGspLedgerService implements GspLedgerPort {
     if (command.operation === 'bet') {
       const current = this.balanceFor(command);
       if (current < amount) {
-        return this.decline(
-          command,
-          GspWalletErrorCodes.INSUFFICIENT_FUNDS,
-          'Insufficient funds',
-        );
+        return this.decline(command, GspWalletErrorCodes.INSUFFICIENT_FUNDS, 'Insufficient funds');
       }
 
       return this.approve(command, -amount);

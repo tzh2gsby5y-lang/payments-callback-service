@@ -23,11 +23,19 @@ import { IdentityUserResponseDto, LoginResponseDto } from './dto/identity-respon
 @ApiTags('identity')
 @Controller()
 export class IdentityController {
+  private readonly registerUser: RegisterUserUseCase;
+  private readonly loginUser: LoginUserUseCase;
+  private readonly getProfile: GetProfileUseCase;
+
   constructor(
-    private readonly registerUser: RegisterUserUseCase,
-    private readonly loginUser: LoginUserUseCase,
-    private readonly getProfile: GetProfileUseCase,
-  ) {}
+    registerUser: RegisterUserUseCase,
+    loginUser: LoginUserUseCase,
+    getProfile: GetProfileUseCase,
+  ) {
+    this.registerUser = registerUser;
+    this.loginUser = loginUser;
+    this.getProfile = getProfile;
+  }
 
   @Post('/auth/register')
   @ApiCreatedResponse({

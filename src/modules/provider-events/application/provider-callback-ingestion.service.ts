@@ -1,5 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { DomainError } from '../../../shared/errors/domain-error';
+import { StructuredLogger } from '../../../shared/observability/structured-logger.service';
 import { CallbackSources } from '../../../shared/provider-events/domain/provider-callback-event';
 import {
   PROVIDER_EVENT_INGESTION_STORE,
@@ -36,12 +37,23 @@ export type ProviderCallbackIngestionResult = {
 
 @Injectable()
 export class ProviderCallbackIngestionService {
+  private readonly adapters: ProviderCallbackRegistry;
+  private readonly providerIdempotency: ProviderIdempotencyService;
+  private readonly ingestionStore: ProviderEventIngestionStore;
+  private readonly logger: StructuredLogger | undefined;
+
   constructor(
-    private readonly adapters: ProviderCallbackRegistry,
-    private readonly providerIdempotency: ProviderIdempotencyService,
+    adapters: ProviderCallbackRegistry,
+    providerIdempotency: ProviderIdempotencyService,
     @Inject(PROVIDER_EVENT_INGESTION_STORE)
-    private readonly ingestionStore: ProviderEventIngestionStore,
-  ) {}
+    ingestionStore: ProviderEventIngestionStore,
+    @Optional() logger?: StructuredLogger,
+  ) {
+    this.adapters = adapters;
+    this.providerIdempotency = providerIdempotency;
+    this.ingestionStore = ingestionStore;
+    this.logger = logger;
+  }
 
   async ingest(
     command: ProviderCallbackIngestionCommand,
@@ -56,6 +68,11 @@ export class ProviderCallbackIngestionService {
     const signature = await adapter.verifySignature(input);
 
     if (!signature.valid) {
+      this.logger?.warn('psp_callback_signature_rejected', {
+        source: command.source,
+        provider,
+        reason: signature.reason,
+      });
       throw new DomainError('INVALID_WEBHOOK_SIGNATURE', 'Webhook signature is invalid', 401, {
         provider,
         reason: signature.reason,
@@ -64,6 +81,10 @@ export class ProviderCallbackIngestionService {
 
     const normalized = adapter.normalize(input);
     if (normalized.source !== CallbackSources.PSP) {
+      this.logger?.error('psp_callback_source_mismatch', {
+        provider,
+        normalizedSource: normalized.source,
+      });
       throw new DomainError(
         'PROVIDER_SOURCE_MISMATCH',
         'PSP ingestion received a non-PSP normalized event',
@@ -88,12 +109,27 @@ export class ProviderCallbackIngestionService {
     });
 
     if (result.kind === 'conflict') {
+      this.logger?.warn('psp_callback_idempotency_conflict', {
+        provider,
+        brandId: pspNormalized.brandId,
+        idempotencyKey: idempotency.key,
+        providerEventId: pspNormalized.providerEventId,
+      });
       throw new DomainError(
         'IDEMPOTENCY_PAYLOAD_MISMATCH',
         'Same idempotency key was used with a different payload',
         409,
       );
     }
+
+    this.logger?.info('psp_callback_ingested', {
+      provider,
+      brandId: pspNormalized.brandId,
+      eventId: result.body.eventId,
+      providerEventId: pspNormalized.providerEventId,
+      status: result.body.status,
+      handoff: result.body.handoff,
+    });
 
     return {
       statusCode: result.statusCode,

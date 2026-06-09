@@ -159,7 +159,7 @@ curl -s -X POST http://localhost:3000/webhooks/gsp/pragmatic \
     "roundId": "round-1",
     "action": "bet",
     "playerId": "player-1",
-    "gameId": "sweet-bonanza",
+    "gameId": "game-demo",
     "amount": "10.00",
     "currency": "EUR",
     "timestamp": "2026-06-08T12:00:00.000Z"
@@ -228,5 +228,6 @@ into `raw_events`. `raw_events` stores verified and normalized provider events o
 For PSP only, `handoff: "pending_evaluation"` means the MVP created a durable
 `provider_event_handoffs` row for later evaluation. It is not a Ledger posting or balance mutation.
 
-For GSP, the durable record is `gsp_wallet_intents`. The included ledger implementation is a local
-mock behind a port so the synchronous flow can be tested without shipping a production Ledger.
+For GSP, the durable record is `gsp_wallet_intents`. The included ledger implementation is a
+deterministic local adapter behind a port so the synchronous flow can be tested without shipping a
+production Ledger.

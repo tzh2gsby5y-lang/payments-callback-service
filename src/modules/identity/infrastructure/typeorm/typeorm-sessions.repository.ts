@@ -10,10 +10,14 @@ import { SessionOrmEntity } from './entities/session.orm-entity';
 
 @Injectable()
 export class TypeOrmSessionsRepository implements SessionsRepository {
+  private readonly repository: Repository<SessionOrmEntity>;
+
   constructor(
     @InjectRepository(SessionOrmEntity)
-    private readonly repository: Repository<SessionOrmEntity>,
-  ) {}
+    repository: Repository<SessionOrmEntity>,
+  ) {
+    this.repository = repository;
+  }
 
   async create(input: CreateSessionInput): Promise<Session> {
     const entity = this.repository.create(input);

@@ -1,20 +1,31 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ForbiddenException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { SessionTokenService } from '../application/session-token.service';
 import {
   SESSIONS_REPOSITORY,
   SessionsRepository,
 } from '../domain/repositories/sessions.repository';
-import { Inject } from '@nestjs/common';
 import { AuthenticatedRequest } from './authenticated-request';
 
 @Injectable()
 export class SessionAuthGuard implements CanActivate {
+  private readonly sessions: SessionsRepository;
+  private readonly tokens: SessionTokenService;
+
   constructor(
-    @Inject(SESSIONS_REPOSITORY) private readonly sessions: SessionsRepository,
-    private readonly tokens: SessionTokenService,
-  ) {}
+    @Inject(SESSIONS_REPOSITORY) sessions: SessionsRepository,
+    tokens: SessionTokenService,
+  ) {
+    this.sessions = sessions;
+    this.tokens = tokens;
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest & Request>();

@@ -10,7 +10,11 @@ export type RequestWithCorrelation = Request & {
 
 @Injectable()
 export class CorrelationIdMiddleware implements NestMiddleware {
-  constructor(private readonly correlationIds: CorrelationIdService) {}
+  private readonly correlationIds: CorrelationIdService;
+
+  constructor(correlationIds: CorrelationIdService) {
+    this.correlationIds = correlationIds;
+  }
 
   use(req: RequestWithCorrelation, res: Response, next: NextFunction): void {
     const incoming = req.header('x-request-id');

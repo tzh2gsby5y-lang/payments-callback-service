@@ -62,7 +62,14 @@ describe('PSP webhook payload OpenAPI contract', () => {
     expect(stripeDataSchema.required).toEqual(['object']);
     expect(stripePaymentSchema.required).toEqual(['id']);
     expect(responseSchema.required).toEqual(
-      expect.arrayContaining(['status', 'eventId', 'provider', 'source', 'idempotencyKey', 'handoff']),
+      expect.arrayContaining([
+        'status',
+        'eventId',
+        'provider',
+        'source',
+        'idempotencyKey',
+        'handoff',
+      ]),
     );
     expect(responseSchema.properties?.['source']?.enum).toEqual(['psp']);
   });

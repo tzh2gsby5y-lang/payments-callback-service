@@ -13,10 +13,14 @@ import { RawEventOrmEntity } from './entities/raw-event.orm-entity';
 
 @Injectable()
 export class TypeOrmRawEventsRepository implements RawEventsRepository {
+  private readonly repository: Repository<RawEventOrmEntity>;
+
   constructor(
     @InjectRepository(RawEventOrmEntity)
-    private readonly repository: Repository<RawEventOrmEntity>,
-  ) {}
+    repository: Repository<RawEventOrmEntity>,
+  ) {
+    this.repository = repository;
+  }
 
   async create(input: CreateRawEventInput): Promise<RawEvent> {
     const entity = this.repository.create({

@@ -1,6 +1,6 @@
 # Decisions
 
-## TypeORM over Prisma
+## Persistence choice
 
 The project uses TypeORM because the intended developer workflow is TypeORM-first. Runtime
 persistence is PostgreSQL with TypeORM entities and repositories.
@@ -116,10 +116,10 @@ immediate business answer. The Pragmatic-like path verifies the request, normali
 action, persists `raw_events`, claims idempotency, creates a `gsp_wallet_intents` record, calls the
 ledger port, stores the response, and returns `200 OK` with the provider-facing wallet result.
 
-The included ledger implementation is a local deterministic mock behind `GSP_LEDGER_PORT`. It is
+The included ledger implementation is a deterministic local adapter behind `GSP_LEDGER_PORT`. It is
 present so reviewers can execute and test a realistic synchronous flow. It is not a production
-Ledger, and replacing it with an HTTP/Kafka/SDK client should not require changing the provider
-adapter.
+Ledger, and replacing it with a service client or message-backed adapter should not require
+changing the provider adapter.
 
 ## Provider event handoffs
 
@@ -194,7 +194,7 @@ PSP callbacks do not call Ledger in the request path. Accepted PSP callbacks cre
 no-ops, conflicts, or manual review.
 
 GSP wallet callbacks call the ledger port from the GSP application use-case because the provider
-expects a synchronous business answer. The current port implementation is a local mock for MVP
+expects a synchronous business answer. The current port implementation is a local adapter for MVP
 demonstration. In production this port should be backed by a real Ledger service or by durable
 ledger-command/outbox rows with a clear synchronous response strategy.
 

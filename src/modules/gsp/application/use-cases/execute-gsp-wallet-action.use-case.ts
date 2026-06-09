@@ -1,7 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { stableStringify } from '../../../../shared/common/canonical-json';
 import { DomainError } from '../../../../shared/errors/domain-error';
+import { StructuredLogger } from '../../../../shared/observability/structured-logger.service';
 import { RawProviderCallbackInput } from '../../../../shared/provider-events/application/ports/provider-callback-adapter';
 import { CallbackSources } from '../../../../shared/provider-events/domain/provider-callback-event';
 import {
@@ -32,11 +33,22 @@ export type ExecuteGspWalletActionResult = {
 
 @Injectable()
 export class ExecuteGspWalletActionUseCase {
+  private readonly providers: GspWalletProviderRegistry;
+  private readonly store: GspWalletActionStore;
+  private readonly ledger: GspLedgerPort;
+  private readonly logger: StructuredLogger | undefined;
+
   constructor(
-    private readonly providers: GspWalletProviderRegistry,
-    @Inject(GSP_WALLET_ACTION_STORE) private readonly store: GspWalletActionStore,
-    @Inject(GSP_LEDGER_PORT) private readonly ledger: GspLedgerPort,
-  ) {}
+    providers: GspWalletProviderRegistry,
+    @Inject(GSP_WALLET_ACTION_STORE) store: GspWalletActionStore,
+    @Inject(GSP_LEDGER_PORT) ledger: GspLedgerPort,
+    @Optional() logger?: StructuredLogger,
+  ) {
+    this.providers = providers;
+    this.store = store;
+    this.ledger = ledger;
+    this.logger = logger;
+  }
 
   async execute(command: ExecuteGspWalletActionCommand): Promise<ExecuteGspWalletActionResult> {
     const providerName = command.provider.toLowerCase();
@@ -50,6 +62,11 @@ export class ExecuteGspWalletActionUseCase {
     const signature = await provider.verifySignature(input);
 
     if (!signature.valid) {
+      this.logger?.warn('gsp_wallet_signature_rejected', {
+        source: CallbackSources.GSP,
+        provider: providerName,
+        reason: signature.reason,
+      });
       throw new DomainError('INVALID_WEBHOOK_SIGNATURE', 'Webhook signature is invalid', 401, {
         provider: providerName,
         reason: signature.reason,
@@ -73,6 +90,13 @@ export class ExecuteGspWalletActionUseCase {
     const begin = await this.store.begin(storeInput);
 
     if (begin.kind === 'conflict') {
+      this.logger?.warn('gsp_wallet_idempotency_conflict', {
+        provider: providerName,
+        brandId: action.brandId,
+        idempotencyKey: idempotency.key,
+        providerEventId: action.providerEventId,
+        operation: action.operation,
+      });
       throw new DomainError(
         'IDEMPOTENCY_PAYLOAD_MISMATCH',
         'Same idempotency key was used with a different wallet payload',
@@ -81,6 +105,13 @@ export class ExecuteGspWalletActionUseCase {
     }
 
     if (begin.kind === 'duplicate_completed') {
+      this.logger?.info('gsp_wallet_duplicate_replayed', {
+        provider: providerName,
+        brandId: action.brandId,
+        idempotencyKey: idempotency.key,
+        providerEventId: action.providerEventId,
+        operation: action.operation,
+      });
       return begin.response;
     }
 
@@ -92,9 +123,21 @@ export class ExecuteGspWalletActionUseCase {
       );
       if (cached) {
         await this.store.recordDuplicateResponse(begin.rawEventId, cached);
+        this.logger?.info('gsp_wallet_processing_duplicate_replayed', {
+          provider: begin.provider,
+          brandId: begin.brandId,
+          idempotencyKey: begin.idempotencyKey,
+          rawEventId: begin.rawEventId,
+        });
         return cached;
       }
 
+      this.logger?.warn('gsp_wallet_result_pending', {
+        provider: begin.provider,
+        brandId: begin.brandId,
+        idempotencyKey: begin.idempotencyKey,
+        rawEventId: begin.rawEventId,
+      });
       throw new DomainError(
         'GSP_WALLET_RESULT_PENDING',
         'Original wallet action is still being processed',
@@ -126,6 +169,14 @@ export class ExecuteGspWalletActionUseCase {
       );
       responseBody = provider.serializeWalletResponse(businessResult);
     } catch (error) {
+      this.logger?.error('gsp_wallet_ledger_failed', {
+        provider: providerName,
+        brandId: action.brandId,
+        idempotencyKey: idempotency.key,
+        providerEventId: action.providerEventId,
+        operation: action.operation,
+        error: this.serializeError(error),
+      });
       const responseBody = {
         error: {
           code: 'GSP_LEDGER_UNAVAILABLE',
@@ -155,6 +206,16 @@ export class ExecuteGspWalletActionUseCase {
           : GspWalletIntentStatuses.LEDGER_DECLINED,
       responseStatus: 200,
       responseBody,
+    });
+
+    this.logger?.info('gsp_wallet_completed', {
+      provider: providerName,
+      brandId: action.brandId,
+      idempotencyKey: idempotency.key,
+      providerEventId: action.providerEventId,
+      operation: action.operation,
+      ledgerStatus: ledgerResult.status,
+      rawEventId: begin.intent.rawEventId,
     });
 
     return {

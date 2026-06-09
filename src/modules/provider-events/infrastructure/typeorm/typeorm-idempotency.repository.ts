@@ -21,10 +21,14 @@ type PostgresError = Error & {
 
 @Injectable()
 export class TypeOrmIdempotencyRepository implements IdempotencyRepository {
+  private readonly repository: Repository<IdempotencyKeyOrmEntity>;
+
   constructor(
     @InjectRepository(IdempotencyKeyOrmEntity)
-    private readonly repository: Repository<IdempotencyKeyOrmEntity>,
-  ) {}
+    repository: Repository<IdempotencyKeyOrmEntity>,
+  ) {
+    this.repository = repository;
+  }
 
   async claim(input: ClaimIdempotencyInput): Promise<IdempotencyClaimResult> {
     try {

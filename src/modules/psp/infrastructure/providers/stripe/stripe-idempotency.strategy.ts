@@ -20,7 +20,6 @@ export class StripeIdempotencyStrategy extends BaseProviderIdempotencyStrategy {
   }
 
   build(event: NormalizedCallbackEvent): ProviderIdempotency {
-    // Stripe event.id dedupes retries; event.type + data.object.id is the stable semantic guard.
     return this.buildResult(
       `${PspProviders.STRIPE}:${event.providerEventId}`,
       [PspProviders.STRIPE, event.eventType, event.aggregateId],

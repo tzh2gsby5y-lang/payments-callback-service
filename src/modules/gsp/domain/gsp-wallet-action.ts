@@ -7,8 +7,7 @@ export const GspWalletOperations = {
   ROLLBACK: 'rollback',
 } as const;
 
-export type GspWalletOperation =
-  (typeof GspWalletOperations)[keyof typeof GspWalletOperations];
+export type GspWalletOperation = (typeof GspWalletOperations)[keyof typeof GspWalletOperations];
 
 export const GspWalletIntentStatuses = {
   LEDGER_IN_FLIGHT: 'LEDGER_IN_FLIGHT',
@@ -37,8 +36,7 @@ export const GspWalletErrorCodes = {
   LEDGER_UNAVAILABLE: 'LEDGER_UNAVAILABLE',
 } as const;
 
-export type GspWalletErrorCode =
-  (typeof GspWalletErrorCodes)[keyof typeof GspWalletErrorCodes];
+export type GspWalletErrorCode = (typeof GspWalletErrorCodes)[keyof typeof GspWalletErrorCodes];
 
 export type NormalizedGspWalletAction = {
   source: typeof CallbackSources.GSP;

@@ -16,8 +16,11 @@ export interface ProviderIdempotencyStrategy {
 export abstract class BaseProviderIdempotencyStrategy implements ProviderIdempotencyStrategy {
   abstract readonly source: CallbackSource;
   abstract readonly provider: string;
+  private readonly hasher: StableJsonHasher;
 
-  constructor(private readonly hasher: StableJsonHasher) {}
+  constructor(hasher: StableJsonHasher) {
+    this.hasher = hasher;
+  }
 
   abstract build(event: NormalizedCallbackEvent): ProviderIdempotency;
 

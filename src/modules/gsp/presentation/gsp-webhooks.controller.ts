@@ -24,7 +24,11 @@ import { GspWalletResponseDto } from './dto/gsp-wallet-response.dto';
 @ApiExtraModels(PragmaticWebhookPayloadDto)
 @Controller('/webhooks/gsp')
 export class GspWebhooksController {
-  constructor(private readonly executeWalletAction: ExecuteGspWalletActionUseCase) {}
+  private readonly executeWalletAction: ExecuteGspWalletActionUseCase;
+
+  constructor(executeWalletAction: ExecuteGspWalletActionUseCase) {
+    this.executeWalletAction = executeWalletAction;
+  }
 
   @Post('/:provider')
   @ApiParam({ name: 'provider', enum: Object.values(GspProviders) })

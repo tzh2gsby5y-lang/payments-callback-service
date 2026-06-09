@@ -10,7 +10,11 @@ export type AuthenticatedPrincipal = {
 
 @Injectable()
 export class GetProfileUseCase {
-  constructor(@Inject(USERS_REPOSITORY) private readonly users: UsersRepository) {}
+  private readonly users: UsersRepository;
+
+  constructor(@Inject(USERS_REPOSITORY) users: UsersRepository) {
+    this.users = users;
+  }
 
   async execute(
     principal: AuthenticatedPrincipal,

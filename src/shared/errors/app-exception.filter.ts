@@ -5,7 +5,11 @@ import { CorrelationIdService } from '../observability/correlation-id.service';
 
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
-  constructor(private readonly correlationIds: CorrelationIdService) {}
+  private readonly correlationIds: CorrelationIdService;
+
+  constructor(correlationIds: CorrelationIdService) {
+    this.correlationIds = correlationIds;
+  }
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>();

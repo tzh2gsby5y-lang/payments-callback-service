@@ -29,7 +29,11 @@ type PostgresError = Error & {
 
 @Injectable()
 export class TypeOrmProviderEventIngestionStore implements ProviderEventIngestionStore {
-  constructor(private readonly dataSource: DataSource) {}
+  private readonly dataSource: DataSource;
+
+  constructor(dataSource: DataSource) {
+    this.dataSource = dataSource;
+  }
 
   async persist(
     input: ProviderEventIngestionStoreInput,

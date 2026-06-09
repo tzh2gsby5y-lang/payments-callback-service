@@ -1,7 +1,5 @@
 import { Session } from '../session';
 
-// Domain repository token: swapping the injected provider changes the storage implementation
-// without changing application use-cases.
 export const SESSIONS_REPOSITORY = Symbol('SESSIONS_REPOSITORY');
 
 export type CreateSessionInput = {

@@ -21,8 +21,11 @@ import { GspWalletIntentOrmEntity } from './entities/gsp-wallet-intent.orm-entit
 @Injectable()
 export class TypeOrmGspWalletActionStore implements GspWalletActionStore {
   private readonly leaseMs = 5_000;
+  private readonly dataSource: DataSource;
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(dataSource: DataSource) {
+    this.dataSource = dataSource;
+  }
 
   async begin(input: GspWalletActionStoreInput): Promise<GspWalletActionBeginResult> {
     return this.dataSource.transaction(async (manager) => {

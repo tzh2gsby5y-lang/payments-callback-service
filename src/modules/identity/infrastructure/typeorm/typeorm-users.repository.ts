@@ -7,10 +7,14 @@ import { UserOrmEntity } from './entities/user.orm-entity';
 
 @Injectable()
 export class TypeOrmUsersRepository implements UsersRepository {
+  private readonly repository: Repository<UserOrmEntity>;
+
   constructor(
     @InjectRepository(UserOrmEntity)
-    private readonly repository: Repository<UserOrmEntity>,
-  ) {}
+    repository: Repository<UserOrmEntity>,
+  ) {
+    this.repository = repository;
+  }
 
   async create(input: CreateUserInput): Promise<User> {
     const entity = this.repository.create(input);

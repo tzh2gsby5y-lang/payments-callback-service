@@ -4,8 +4,6 @@ import {
   IdempotencyStatus,
 } from '../../../../shared/provider-events/domain/provider-callback-event';
 
-// Domain repository token: idempotency is a domain safety boundary, while the concrete storage
-// can be replaced by changing the Nest provider binding.
 export const IDEMPOTENCY_REPOSITORY = Symbol('IDEMPOTENCY_REPOSITORY');
 
 export type ClaimIdempotencyInput = {

@@ -24,8 +24,11 @@ import {
 export class StripePspProvider implements ProviderCallbackAdapter {
   readonly source = CallbackSources.PSP;
   readonly provider = PspProviders.STRIPE;
+  private readonly config: ConfigService<Env>;
 
-  constructor(private readonly config: ConfigService<Env>) {}
+  constructor(config: ConfigService<Env>) {
+    this.config = config;
+  }
 
   async verifySignature(input: RawProviderCallbackInput): Promise<SignatureVerification> {
     const secret = this.config.get('STRIPE_WEBHOOK_SECRET', { infer: true });

@@ -24,7 +24,6 @@ import { PspWebhooksController } from './presentation/psp-webhooks.controller';
     {
       provide: PSP_PROVIDER_CALLBACK_ADAPTERS,
       inject: [StripePspProvider],
-      // Register PSP providers here; ingestion consumes this token without knowing concrete classes.
       useFactory: (stripe: StripePspProvider): ProviderCallbackAdapter[] => [stripe],
     },
     {

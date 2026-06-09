@@ -24,7 +24,11 @@ import { IngestPspCallbackUseCase } from '../application/use-cases/ingest-psp-ca
 @ApiTags('psp')
 @Controller('/webhooks/psp')
 export class PspWebhooksController {
-  constructor(private readonly ingestPspCallback: IngestPspCallbackUseCase) {}
+  private readonly ingestPspCallback: IngestPspCallbackUseCase;
+
+  constructor(ingestPspCallback: IngestPspCallbackUseCase) {
+    this.ingestPspCallback = ingestPspCallback;
+  }
 
   @Post('/:provider')
   @ApiParam({ name: 'provider', enum: Object.values(PspProviders) })

@@ -26,8 +26,11 @@ import { GspWalletProviderAdapter } from '../../../application/ports/gsp-wallet-
 export class PragmaticGspProvider implements GspWalletProviderAdapter {
   readonly source = CallbackSources.GSP;
   readonly provider = GspProviders.PRAGMATIC;
+  private readonly config: ConfigService<Env>;
 
-  constructor(private readonly config: ConfigService<Env>) {}
+  constructor(config: ConfigService<Env>) {
+    this.config = config;
+  }
 
   async verifySignature(input: RawProviderCallbackInput): Promise<SignatureVerification> {
     const secret = this.config.get('PRAGMATIC_WEBHOOK_SECRET', { infer: true });

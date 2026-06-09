@@ -1,5 +1,7 @@
 import { ArgumentsHost, BadRequestException, HttpException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
+import { Env } from '../../src/config/env.schema';
 import { AppExceptionFilter } from '../../src/shared/errors/app-exception.filter';
 import { DomainError } from '../../src/shared/errors/domain-error';
 import {
@@ -8,6 +10,7 @@ import {
 } from '../../src/shared/observability/correlation-id.middleware';
 import { CorrelationIdService } from '../../src/shared/observability/correlation-id.service';
 import { RequestLoggerMiddleware } from '../../src/shared/observability/request-logger.middleware';
+import { StructuredLogger } from '../../src/shared/observability/structured-logger.service';
 
 describe('observability and structured errors', () => {
   it('propagates an incoming correlation id to request, response, and async context', () => {
@@ -146,9 +149,9 @@ describe('observability and structured errors', () => {
     });
   });
 
-  it('logs request completion with correlation id and response status', () => {
-    const write = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    const middleware = new RequestLoggerMiddleware(correlationIdsMock('req-log'));
+  it('logs request completion through the shared structured logger', () => {
+    const logger = structuredLoggerMock();
+    const middleware = new RequestLoggerMiddleware(logger);
     const callbacks = new Map<string, () => void>();
     const req = loggerRequestMock('POST', '/webhooks/psp/stripe');
     const res = loggerResponseMock(202, callbacks);
@@ -158,9 +161,129 @@ describe('observability and structured errors', () => {
     callbacks.get('finish')?.();
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(write).toHaveBeenCalledWith(expect.stringContaining('"path":"/webhooks/psp/stripe"'));
-    expect(write).toHaveBeenCalledWith(expect.stringContaining('"requestId":"req-log"'));
+    expect(logger.info).toHaveBeenCalledWith(
+      'request_completed',
+      expect.objectContaining({
+        method: 'POST',
+        path: '/webhooks/psp/stripe',
+        statusCode: 202,
+      }),
+    );
+  });
+
+  it('writes structured logs with correlation id and safe custom fields', () => {
+    const write = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const logger = new StructuredLogger(correlationIdsMock('req-log'));
+
+    logger.info('psp_callback_ingested', {
+      provider: 'stripe',
+      brandId: 'brandA',
+      status: 'accepted',
+    });
+
+    const line = write.mock.calls[0]?.[0];
+    if (typeof line !== 'string') {
+      throw new Error('Expected structured log line');
+    }
+    const parsed = JSON.parse(line) as Record<string, unknown>;
+    expect(parsed).toMatchObject({
+      level: 'info',
+      message: 'psp_callback_ingested',
+      requestId: 'req-log',
+      provider: 'stripe',
+      brandId: 'brandA',
+      status: 'accepted',
+    });
+    expect(typeof parsed['timestamp']).toBe('string');
     write.mockRestore();
+  });
+
+  it('omits request id when no correlation id exists', () => {
+    const write = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const logger = new StructuredLogger(
+      correlationIdsMock(undefined),
+      new ConfigService<Env>({ LOG_LEVEL: 'debug' }),
+    );
+
+    logger.debug('background_tick');
+
+    const line = write.mock.calls[0]?.[0];
+    if (typeof line !== 'string') {
+      throw new Error('Expected structured log line');
+    }
+    const parsed = JSON.parse(line) as Record<string, unknown>;
+    expect(parsed).toMatchObject({
+      level: 'debug',
+      message: 'background_tick',
+    });
+    expect(parsed).not.toHaveProperty('requestId');
+    write.mockRestore();
+  });
+
+  it('writes warnings to stdout and errors to stderr', () => {
+    const stdout = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const stderr = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const logger = new StructuredLogger(correlationIdsMock('req-errors'));
+
+    logger.warn('recoverable_event');
+    logger.error('failed_event');
+
+    expect(stdout).toHaveBeenCalledTimes(1);
+    expect(stderr).toHaveBeenCalledTimes(1);
+
+    const warningLine = stdout.mock.calls[0]?.[0];
+    const errorLine = stderr.mock.calls[0]?.[0];
+    if (typeof warningLine !== 'string' || typeof errorLine !== 'string') {
+      throw new Error('Expected structured log lines');
+    }
+    expect(JSON.parse(warningLine) as Record<string, unknown>).toMatchObject({
+      level: 'warn',
+      message: 'recoverable_event',
+      requestId: 'req-errors',
+    });
+    expect(JSON.parse(errorLine) as Record<string, unknown>).toMatchObject({
+      level: 'error',
+      message: 'failed_event',
+      requestId: 'req-errors',
+    });
+
+    stdout.mockRestore();
+    stderr.mockRestore();
+  });
+
+  it('honors configured log level', () => {
+    const stdout = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const stderr = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const logger = new StructuredLogger(
+      correlationIdsMock('req-level'),
+      new ConfigService<Env>({ LOG_LEVEL: 'warn' }),
+    );
+
+    logger.info('suppressed_event');
+    logger.warn('visible_warning');
+    logger.error('visible_error');
+
+    expect(stdout).toHaveBeenCalledTimes(1);
+    expect(stderr).toHaveBeenCalledTimes(1);
+
+    const warningLine = stdout.mock.calls[0]?.[0];
+    const errorLine = stderr.mock.calls[0]?.[0];
+    if (typeof warningLine !== 'string' || typeof errorLine !== 'string') {
+      throw new Error('Expected structured log lines');
+    }
+    expect(JSON.parse(warningLine) as Record<string, unknown>).toMatchObject({
+      level: 'warn',
+      message: 'visible_warning',
+      requestId: 'req-level',
+    });
+    expect(JSON.parse(errorLine) as Record<string, unknown>).toMatchObject({
+      level: 'error',
+      message: 'visible_error',
+      requestId: 'req-level',
+    });
+
+    stdout.mockRestore();
+    stderr.mockRestore();
   });
 });
 
@@ -172,6 +295,7 @@ type CorrelationRequestMock = {
 type HeaderResponseMock = Pick<Response, 'setHeader'>;
 type JsonResponseMock = Pick<Response, 'status' | 'json'>;
 type LoggerRequestMock = Pick<Request, 'method' | 'originalUrl'>;
+type StructuredLoggerMock = Pick<StructuredLogger, 'info'>;
 type LoggerResponseMock = {
   statusCode: number;
   on: (event: string, callback: () => void) => LoggerResponseMock;
@@ -202,6 +326,14 @@ function loggerRequestMock(method: string, originalUrl: string): LoggerRequestMo
     method,
     originalUrl,
   };
+}
+
+function structuredLoggerMock(): StructuredLogger {
+  const logger: StructuredLoggerMock = {
+    info: jest.fn(),
+  };
+
+  return logger as StructuredLogger;
 }
 
 function loggerResponseMock(

@@ -1,5 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { DomainError } from '../../../../shared/errors/domain-error';
+import { StructuredLogger } from '../../../../shared/observability/structured-logger.service';
 import { USERS_REPOSITORY, UsersRepository } from '../../domain/repositories/users.repository';
 import { PasswordHasher } from '../password-hasher';
 
@@ -11,10 +12,19 @@ export type RegisterUserCommand = {
 
 @Injectable()
 export class RegisterUserUseCase {
+  private readonly users: UsersRepository;
+  private readonly passwordHasher: PasswordHasher;
+  private readonly logger: StructuredLogger | undefined;
+
   constructor(
-    @Inject(USERS_REPOSITORY) private readonly users: UsersRepository,
-    private readonly passwordHasher: PasswordHasher,
-  ) {}
+    @Inject(USERS_REPOSITORY) users: UsersRepository,
+    passwordHasher: PasswordHasher,
+    @Optional() logger?: StructuredLogger,
+  ) {
+    this.users = users;
+    this.passwordHasher = passwordHasher;
+    this.logger = logger;
+  }
 
   async execute(
     command: RegisterUserCommand,
@@ -23,6 +33,9 @@ export class RegisterUserUseCase {
     const existing = await this.users.findByBrandAndEmail(command.brandId, email);
 
     if (existing) {
+      this.logger?.warn('identity_registration_conflict', {
+        brandId: command.brandId,
+      });
       throw new DomainError('USER_ALREADY_EXISTS', 'User already exists for this brand', 409);
     }
 
@@ -31,6 +44,11 @@ export class RegisterUserUseCase {
       brandId: command.brandId,
       email,
       passwordHash,
+    });
+
+    this.logger?.info('identity_user_registered', {
+      brandId: user.brandId,
+      userId: user.id,
     });
 
     return {

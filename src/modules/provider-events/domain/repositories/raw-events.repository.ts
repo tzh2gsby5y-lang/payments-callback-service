@@ -4,8 +4,6 @@ import {
   RawEventStatus,
 } from '../../../../shared/provider-events/domain/provider-callback-event';
 
-// Domain repository token: infrastructure modules bind this contract to TypeORM or future
-// persistence implementations without coupling callback use-cases to the ORM.
 export const RAW_EVENTS_REPOSITORY = Symbol('RAW_EVENTS_REPOSITORY');
 
 export type CreateRawEventInput = {

@@ -122,7 +122,7 @@ export class PragmaticWebhookPayloadDto {
   @ApiPropertyOptional({ example: 'player-1' })
   userId?: string;
 
-  @ApiPropertyOptional({ example: 'sweet-bonanza' })
+  @ApiPropertyOptional({ example: 'game-demo' })
   gameId?: string;
 
   @ApiPropertyOptional({ oneOf: [{ type: 'number' }, { type: 'string' }], example: '10.00' })

@@ -1,11 +1,11 @@
-import { FakeGspLedgerService } from '../../src/modules/gsp/infrastructure/ledger/fake-gsp-ledger.service';
+import { LocalGspLedgerService } from '../../src/modules/gsp/infrastructure/ledger/local-gsp-ledger.service';
 import { GspLedgerCommand } from '../../src/modules/gsp/application/ports/gsp-ledger.port';
 
-describe('FakeGspLedgerService', () => {
-  let ledger: FakeGspLedgerService;
+describe('LocalGspLedgerService', () => {
+  let ledger: LocalGspLedgerService;
 
   beforeEach(() => {
-    ledger = new FakeGspLedgerService();
+    ledger = new LocalGspLedgerService();
   });
 
   it('returns the default balance and replays the same ledger command idempotently', async () => {

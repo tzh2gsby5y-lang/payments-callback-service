@@ -132,7 +132,9 @@ function repositoryMock() {
   };
 }
 
-function repositoryFromMock<T extends object>(mock: ReturnType<typeof repositoryMock>): Repository<T> {
+function repositoryFromMock<T extends object>(
+  mock: ReturnType<typeof repositoryMock>,
+): Repository<T> {
   const repository = Object.create(Repository.prototype) as Repository<T>;
   return Object.assign(repository, mock);
 }

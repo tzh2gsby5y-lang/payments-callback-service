@@ -10,7 +10,11 @@ export type IngestPspCallbackCommand = Omit<ProviderCallbackIngestionCommand, 's
 
 @Injectable()
 export class IngestPspCallbackUseCase {
-  constructor(private readonly ingestion: ProviderCallbackIngestionService) {}
+  private readonly ingestion: ProviderCallbackIngestionService;
+
+  constructor(ingestion: ProviderCallbackIngestionService) {
+    this.ingestion = ingestion;
+  }
 
   async execute(command: IngestPspCallbackCommand): Promise<ProviderCallbackIngestionResult> {
     return this.ingestion.ingest({

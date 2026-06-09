@@ -31,11 +31,14 @@ describe('Tenant leakage integration', () => {
       password: 'strong-password',
     });
 
-    const login = await request(context.app.getHttpServer()).post('/auth/login').send({
-      brandId: 'brandA',
-      email: 'player@example.com',
-      password: 'strong-password',
-    }).expect(200);
+    const login = await request(context.app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        brandId: 'brandA',
+        email: 'player@example.com',
+        password: 'strong-password',
+      })
+      .expect(200);
 
     await request(context.app.getHttpServer())
       .get('/profile/me')

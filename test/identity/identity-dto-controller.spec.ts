@@ -144,8 +144,6 @@ function profileUseCaseMock(
   };
 }
 
-function authenticatedRequest(
-  principal: AuthenticatedRequest['principal'],
-): AuthenticatedRequest {
+function authenticatedRequest(principal: AuthenticatedRequest['principal']): AuthenticatedRequest {
   return Object.assign(Object.create(expressRequest), { principal }) as AuthenticatedRequest;
 }

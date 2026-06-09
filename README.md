@@ -97,7 +97,7 @@ npm run migration:generate -- src/shared/persistence/migrations/NextMigrationNam
 | No direct balance updates  | provider adapters only verify/normalize; wallet effects go through the ledger port            |
 | Structured errors          | global exception filter returns `{ error: { code, message, statusCode, requestId } }`         |
 | Tests                      | unit coverage gate, callback idempotency E2E, tenant leakage E2E, webhook contract tests      |
-| Observability              | request/correlation id middleware and JSON request logs                                       |
+| Observability              | request/correlation id middleware and JSON request/business logs                              |
 
 ### PSP vs GSP scope
 
@@ -108,7 +108,7 @@ This MVP deliberately uses different contours for PSP and GSP.
 - GSP callbacks are modeled as synchronous wallet-style business actions. A Pragmatic-like
   `bet`/`win`/`rollback` request is verified, persisted, deduplicated, executed through a ledger
   port, and answered with a provider-facing wallet result.
-- The included ledger implementation is a deterministic local mock behind `GSP_LEDGER_PORT`; it is
+- The included ledger implementation is a deterministic local adapter behind `GSP_LEDGER_PORT`; it is
   not a real Ledger service and can be replaced without changing the GSP provider adapter.
 
 ### Inbox-first interpretation
@@ -122,7 +122,7 @@ An outbox-style table becomes useful only after this service decides to emit or 
 work. In this MVP that boundary is intentionally different per contour:
 
 - PSP creates `provider_event_handoffs` as an outbox-style work record for a future evaluator,
-  dispatcher, Kafka publisher, or Ledger command mapper.
+  dispatcher, message publisher, or Ledger command mapper.
 - GSP creates `gsp_wallet_intents` as a durable synchronous wallet/ledger intent because the game
   provider expects the result of `balance`, `bet`, `win`, or `rollback` inside the same HTTP
   exchange.
